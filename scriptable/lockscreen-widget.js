@@ -1,30 +1,63 @@
-const fm = FileManager.local()
+let timetable
+let cache_age
+
 const cache_path = fm.joinPath(
 	fm.documentsDirectory(),
 	"timetable.json"
 )
 
-let timetable
-let from_cache = false
+const updated_path = fm.joinPath(
+	fm.documentsDirectory(),
+	"timetable_updated.txt"
+)
 
-try {
-	// Get fresh data
-	const request = new Request("http://192.168.68.113:5000/timetable")
-	request.timeoutInterval = 5
+const CACHE_DURATION = 60 * 60 * 1000 // 1 hour
 
-	timetable = await request.loadJSON()
+let should_fetch = true
 
-	// Save the fresh data
-	fm.writeString(cache_path, JSON.stringify(timetable))
+if (
+	fm.fileExists(cache_path) &&
+	fm.fileExists(updated_path)
+) {
+	const last_updated = Number(fm.readString(updated_path))
+	cache_age = Date.now() - last_updated
 
-} catch (error) {
-	console.log("Request failed:", error)
-
-	// Request failed -> use saved data
-	if (fm.fileExists(cache_path)) {
-		timetable = JSON.parse(fm.readString(cache_path))
-		from_cache = true
+	if (cache_age < CACHE_DURATION) {
+		should_fetch = false
 	}
+}
+
+if (should_fetch) {
+	try {
+		const request = new Request(
+			"http://192.168.68.113:5000/timetable"
+		)
+		request.timeoutInterval = 5
+
+		timetable = await request.loadJSON()
+
+		// Save fresh timetable
+		fm.writeString(
+			cache_path,
+			JSON.stringify(timetable)
+		)
+
+		// Save fetch time
+		fm.writeString(
+			updated_path,
+			String(Date.now())
+		)
+
+		cache_age = 0
+
+	} catch (error) {
+		console.log("Request failed:", error)
+	}
+}
+
+// Use cache if we didn't fetch, or if fetching failed
+if (!timetable && fm.fileExists(cache_path)) {
+	timetable = JSON.parse(fm.readString(cache_path))
 }
 
 let widget = new ListWidget()
@@ -32,7 +65,7 @@ let widget = new ListWidget()
 if (timetable) {
 	let lesson_data = get_relevant_lesson(timetable)
 	if (lesson_data){
-		build_widget(lesson_data, from_cache)
+		build_widget(lesson_data, cache_age)
 	} else {
 		build_no_lessons_widget()
 	}
@@ -123,7 +156,7 @@ function arr_to_string(arr) {
 	return arr.join(", ")
 }
 
-function build_widget(lesson_data, from_cache) {
+function build_widget(lesson_data, cache_age) {
 	lesson = lesson_data.lesson
 	let name = widget.addText(lesson.name)
 	name.font = Font.boldSystemFont(14)
@@ -142,7 +175,7 @@ function build_widget(lesson_data, from_cache) {
 	teachers_and_rooms.minimumScaleFactor = 0.8
 	teachers_and_rooms.lineLimit = 2
 
-	if (from_cache) {
+	if (cache_age > CACHE_DURATION) {
 		let bottom = widget.addStack()
 		bottom.layoutHorizontally()
 		bottom.addSpacer()
@@ -172,6 +205,30 @@ function build_error_widget() {
 	message.font = Font.systemFont(10)
 }
 
+function get_refresh_time(){
+	let refresh_minutes = 60
+
+	if (timetable) {
+		let lesson_data = get_relevant_lesson(timetable)
+
+		if (lesson_data && lesson_data.minutes_until !== "") {
+			const minutes = lesson_data.minutes_until
+
+			if (minutes <= 30) {
+				refresh_minutes = 1
+			} else if (minutes <= 120) {
+				refresh_minutes = 5
+			} else {
+				refresh_minutes = 30
+			}
+		}
+	}
+
+	return refresh_minutes
+}
+
 Script.setWidget(widget)
-widget.refreshAfterDate = new Date(Date.now() + 30 * 1000)
+
+widget.refreshAfterDate = new Date(Date.now() + get_refresh_time() * 60 * 1000)
+
 Script.complete()
