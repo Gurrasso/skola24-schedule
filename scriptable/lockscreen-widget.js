@@ -131,14 +131,14 @@ function build_widget(lesson_data, from_cache) {
 	let time = widget.addText(
 		`${lesson_data.day}${lesson.start} - ${lesson.end}${format_minutes(lesson_data.minutes_until)}`
 	)
-	time.font = Font.systemFont(12)
+	time.font = Font.systemFont(14)
 	time.minimumScaleFactor = 0.8
 	time.lineLimit = 2
 
 	let teachers_and_rooms = widget.addText(
 		`${lesson.teachers.join(", ")}		${lesson.rooms.join(", ")}`
 	)
-	teachers_and_rooms.font = Font.systemFont(12)
+	teachers_and_rooms.font = Font.systemFont(14)
 	teachers_and_rooms.minimumScaleFactor = 0.8
 	teachers_and_rooms.lineLimit = 2
 
@@ -173,4 +173,5 @@ function build_error_widget() {
 }
 
 Script.setWidget(widget)
+widget.refreshAfterDate = new Date(Date.now() + 30 * 1000)
 Script.complete()
