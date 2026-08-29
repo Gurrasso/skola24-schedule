@@ -41,14 +41,17 @@ if (timetable) {
 }
 
 function format_minutes(minutes) {
+	// Nothing to format
+	if (minutes == 0) { return "" }
+
 	const hours = Math.floor(minutes / 60)
 	const mins = minutes % 60
 
 	if (hours > 0) {
-		return `${hours} h ${mins} min`
+		return ` | ${hours} h ${mins} min`
 	}
 
-	return `${mins} min`
+	return ` | ${mins} min`
 }
 
 function get_relevant_lesson(data) {
@@ -108,7 +111,7 @@ function get_relevant_lesson(data) {
 			return {
 				lesson: lesson,
 				day: offset === 0 ? "" : day_name.concat(" | "),
-				minutes_until: offset === 0 ? "" : minutes_until
+				minutes_until: offset !== 0 ? "" : minutes_until
 			}
 		}
 	}
@@ -123,19 +126,19 @@ function arr_to_string(arr) {
 function build_widget(lesson_data, from_cache) {
 	lesson = lesson_data.lesson
 	let name = widget.addText(lesson.name)
-	name.font = Font.boldSystemFont(15)
+	name.font = Font.boldSystemFont(14)
 
 	let time = widget.addText(
-		`${lesson_data.day}${lesson.start} - ${lesson.end}	${format_minutes(lesson_data.minutes_until)}`
+		`${lesson_data.day}${lesson.start} - ${lesson.end}${format_minutes(lesson_data.minutes_until)}`
 	)
-	time.font = Font.systemFont(14)
+	time.font = Font.systemFont(12)
 	time.minimumScaleFactor = 0.8
 	time.lineLimit = 2
 
 	let teachers_and_rooms = widget.addText(
 		`${lesson.teachers.join(", ")}		${lesson.rooms.join(", ")}`
 	)
-	teachers_and_rooms.font = Font.systemFont(14)
+	teachers_and_rooms.font = Font.systemFont(12)
 	teachers_and_rooms.minimumScaleFactor = 0.8
 	teachers_and_rooms.lineLimit = 2
 
