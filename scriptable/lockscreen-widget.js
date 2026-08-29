@@ -29,13 +29,16 @@ try {
 
 let widget = new ListWidget()
 
-if (timetable && !timetable.error) {
-	build_widget(get_next_lesson(timetable), fromCache)
+if (timetable) {
+	let lesson = get_next_lesson(timetable)
+	if (lesson){
+		build_widget(lesson, fromCache)
+	} else {
+		build_no_lessons_widget()
+	}
 } else {
 	build_error_widget()
 }
-
-main()
 
 function get_next_lessons(data) {
 	const days = ["Sö", "Må", "Ti", "On", "To", "Fr", "Lö"]
@@ -98,6 +101,9 @@ function build_widget(lesson, fromCache) {
 	}
 }
 
+function build_no_lessons_widget(){
+	
+}
 
 function build_error_widget() {
 	let error = widget.addText("⚠️ No data")
