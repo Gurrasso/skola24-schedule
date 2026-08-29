@@ -1,11 +1,11 @@
 const fm = FileManager.local()
-const cachePath = fm.joinPath(
+const cache_path = fm.joinPath(
 	fm.documentsDirectory(),
 	"timetable.json"
 )
 
 let timetable
-let fromCache = false
+let from_cache = false
 
 try {
 	// Get fresh data
@@ -15,24 +15,24 @@ try {
 	timetable = await request.loadJSON()
 
 	// Save the fresh data
-	fm.writeString(cachePath, JSON.stringify(timetable))
+	fm.writeString(cache_path, JSON.stringify(timetable))
 
 } catch (error) {
 	console.log("Request failed:", error)
 
 	// Request failed → use saved data
-	if (fm.fileExists(cachePath)) {
-		timetable = JSON.parse(fm.readString(cachePath))
-		fromCache = true
+	if (fm.fileExists(cache_path)) {
+		timetable = JSON.parse(fm.readString(cache_path))
+		from_cache = true
 	}
 }
 
 let widget = new ListWidget()
 
 if (timetable) {
-	let lesson = get_next_lesson(timetable).lesson
-	if (lesson){
-		build_widget(lesson, fromCache)
+	let lesson_data = get_next_lesson(timetable)
+	if (lesson_data){
+		build_widget(lesson_data.lesson, from_cache)
 	} else {
 		build_no_lessons_widget()
 	}
@@ -44,51 +44,59 @@ function get_next_lesson(data) {
   const days = ["Sö", "Må", "Ti", "On", "To", "Fr", "Lö"]
   const now = new Date()
 
-  const currentDay = now.getDay()
-  const currentMinutes = now.getHours() * 60 + now.getMinutes()
+  const current_day = now.getDay()
+  const current_minutes = now.getHours() * 60 + now.getMinutes()
 
   // Search today, then the following 6 days
-  for (let offset = 0; offset < 1; offset++) {
-    const dayIndex = (currentDay + offset) % 7
-    const dayName = days[dayIndex]
+  for (let offset = 0; offset < 7; offset++) {
+    const day_index = (current_day + offset) % 7
+    const day_name = days[day_index]
 
-    const dayData = data.find(day => day[dayName])
+    const day_data = data.find(day => day[day_name])
 
-    if (!dayData) continue
+    if (!day_data) continue
 
-    const lessons = dayData[dayName].lessons
+    const lessons = day_data[day_name].lessons
 
     for (const lesson of lessons) {
-      const [startHour, startMinute] = lesson.start.split(":")
-      const startMinutes =
-        Number(startHour) * 60 + Number(startMinute)
+      const [start_hour, start_minute] = lesson.start.split(":")
+      const start_minutes =
+        Number(start_hour) * 60 + Number(start_minute)
 
       // If today, ignore lessons that have already started
-      if (offset === 0 && startMinutes <= currentMinutes) {
+      if (offset === 0 && start_minutes <= current_minutes) {
         continue
       }
 
+      // Minutes from now until the lesson
+      const minutes_until =
+        (offset * 24 * 60) +
+        start_minutes -
+        current_minutes
+
       return {
         lesson: lesson,
-        day: dayName,
-        daysFromNow: offset
+        day: offset === 0 ? "" : day_name.concat(" |"),
+        minutes_until: minutes_until
       }
     }
   }
 
-  return null
+  return [] 
 }
+
 
 function arr_to_string(arr) {
 	return arr.join(", ")
 }
 
-function build_widget(lesson, fromCache) {
+function build_widget(lesson_data, fromCache) {
+	lesson = lesson_data.lesson
 	let name = widget.addText(lesson.name)
-	name.font = Font.boldSystemFont(16)
+	name.font = Font.boldSystemFont(15)
 
 	let time = widget.addText(
-		`${lesson.start} - ${lesson.end}`
+		`${lesson_data.day}${lesson.start} - ${lesson.end}`
 	)
 	time.font = Font.systemFont(14)
 
@@ -107,8 +115,8 @@ function build_widget(lesson, fromCache) {
 }
 
 function build_no_lessons_widget(){
-	let text = widget.addText("No classes tomorrow!")
-	text.font = Font.boldSystemFont(18)
+	let text = widget.addText("No classes found")
+	text.font = Font.boldSystemFont(14)
 
 }
 
