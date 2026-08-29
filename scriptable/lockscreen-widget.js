@@ -30,7 +30,7 @@ try {
 let widget = new ListWidget()
 
 if (timetable) {
-	let lesson = get_next_lesson(timetable)
+	let lesson = get_next_lesson(timetable).lesson
 	if (lesson){
 		build_widget(lesson, fromCache)
 	} else {
@@ -48,7 +48,7 @@ function get_next_lesson(data) {
   const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
   // Search today, then the following 6 days
-  for (let offset = 0; offset < 7; offset++) {
+  for (let offset = 0; offset < 1; offset++) {
     const dayIndex = (currentDay + offset) % 7
     const dayName = days[dayIndex]
 
@@ -85,17 +85,17 @@ function arr_to_string(arr) {
 
 function build_widget(lesson, fromCache) {
 	let name = widget.addText(lesson.name)
-	name.font = Font.boldSystemFont(12)
+	name.font = Font.boldSystemFont(16)
 
 	let time = widget.addText(
 		`${lesson.start} - ${lesson.end}`
 	)
-	time.font = Font.systemFont(12)
+	time.font = Font.systemFont(14)
 
 	let teachers_rooms = widget.addText(
 		`${lesson.teachers.join(", ")}		${lesson.rooms.join(", ")}`
 	)
-	teachers_rooms.font = Font.systemFont(12)
+	teachers_rooms.font = Font.systemFont(14)
 
 	if (fromCache) {
 		widget.addSpacer(4)
@@ -107,7 +107,9 @@ function build_widget(lesson, fromCache) {
 }
 
 function build_no_lessons_widget(){
-	
+	let text = widget.addText("No classes tomorrow!")
+	text.font = Font.boldSystemFont(18)
+
 }
 
 function build_error_widget() {
