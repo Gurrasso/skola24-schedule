@@ -83,35 +83,25 @@ with sync_playwright() as p:
 
     page.wait_for_load_state("networkidle")
 
-    is_weekend = False
+    days = [
+        "Må",  # Monday
+        "Ti",  # Tuesday
+        "On",  # Wednesday
+        "To",  # Thursday
+        "Fr",  # Friday
+    ]
 
-    day_map = {
-        0: "Må",  # Monday
-        1: "Ti",  # Tuesday
-        2: "On",  # Wednesday
-        3: "To",  # Thursday
-        4: "Fr",  # Friday
-    }
+    timetable = []
 
-    #day_name = day_map.get(datetime.now().weekday())
-    day_name = day_map.get(4)
+    for day_name in days:
+        page.get_by_role("button", name=day_name).click()
 
-    if not day_name:
-        is_weekend = True
-    else: 
-        page.locator(
-            "ul.w-button-group.w-button-group-fill-row button.w-button"
-        ).filter(
-            has_text=day_name
-        ).click()
+        # Todo: Change this
+        page.wait_for_timeout(300)
 
-    page.wait_for_timeout(300)
+        timetable.append({day_name : extract_timetable(page)})
 
 
-    if not is_weekend:
-        timetable = extract_timetable(page)
-    else:
-        timetable = { "lessons" : [] }
 
     print(json.dumps(
         timetable,
