@@ -32,7 +32,7 @@ let widget = new ListWidget()
 if (timetable) {
 	let lesson_data = get_next_lesson(timetable)
 	if (lesson_data){
-		build_widget(lesson_data.lesson, from_cache)
+		build_widget(lesson_data, from_cache)
 	} else {
 		build_no_lessons_widget()
 	}
@@ -41,48 +41,48 @@ if (timetable) {
 }
 
 function get_next_lesson(data) {
-  const days = ["Sö", "Må", "Ti", "On", "To", "Fr", "Lö"]
-  const now = new Date()
+	const days = ["Sö", "Må", "Ti", "On", "To", "Fr", "Lö"]
+	const now = new Date()
 
-  const current_day = now.getDay()
-  const current_minutes = now.getHours() * 60 + now.getMinutes()
+	const current_day = now.getDay()
+	const current_minutes = now.getHours() * 60 + now.getMinutes()
 
-  // Search today, then the following 6 days
-  for (let offset = 0; offset < 7; offset++) {
-    const day_index = (current_day + offset) % 7
-    const day_name = days[day_index]
+	// Search today, then the following 6 days
+	for (let offset = 0; offset < 7; offset++) {
+		const day_index = (current_day + offset) % 7
+		const day_name = days[day_index]
 
-    const day_data = data.find(day => day[day_name])
+		const day_data = data.find(day => day[day_name])
 
-    if (!day_data) continue
+		if (!day_data) continue
 
-    const lessons = day_data[day_name].lessons
+		const lessons = day_data[day_name].lessons
 
-    for (const lesson of lessons) {
-      const [start_hour, start_minute] = lesson.start.split(":")
-      const start_minutes =
-        Number(start_hour) * 60 + Number(start_minute)
+		for (const lesson of lessons) {
+			const [start_hour, start_minute] = lesson.start.split(":")
+			const start_minutes =
+				Number(start_hour) * 60 + Number(start_minute)
 
-      // If today, ignore lessons that have already started
-      if (offset === 0 && start_minutes <= current_minutes) {
-        continue
-      }
+			// If today, ignore lessons that have already started
+			if (offset === 0 && start_minutes <= current_minutes) {
+				continue
+			}
 
-      // Minutes from now until the lesson
-      const minutes_until =
-        (offset * 24 * 60) +
-        start_minutes -
-        current_minutes
+			// Minutes from now until the lesson
+			const minutes_until =
+				(offset * 24 * 60) +
+				start_minutes -
+				current_minutes
 
-      return {
-        lesson: lesson,
-        day: offset === 0 ? "" : day_name.concat(" |"),
-        minutes_until: minutes_until
-      }
-    }
-  }
+			return {
+				lesson: lesson,
+				day: offset === 0 ? "" : day_name.concat(" | "),
+				minutes_until: minutes_until
+			}
+		}
+	}
 
-  return [] 
+	return [] 
 }
 
 
@@ -90,7 +90,7 @@ function arr_to_string(arr) {
 	return arr.join(", ")
 }
 
-function build_widget(lesson_data, fromCache) {
+function build_widget(lesson_data, from_cache) {
 	lesson = lesson_data.lesson
 	let name = widget.addText(lesson.name)
 	name.font = Font.boldSystemFont(15)
@@ -105,10 +105,17 @@ function build_widget(lesson_data, fromCache) {
 	)
 	teachers_rooms.font = Font.systemFont(14)
 
-	if (fromCache) {
-		widget.addSpacer(4)
+	// Push bottom stack to the bottom
+	widget.addSpacer()
 
-		let cached = widget.addText("⚠️ Cached")
+	let bottom = widget.addStack()
+	bottom.layoutHorizontally()
+
+	// Push icon to the right
+	bottom.addSpacer()
+
+	if (from_cache) {
+		let cached = bottom.addText("●")
 		cached.font = Font.systemFont(8)
 		cached.textColor = Color.gray()
 	}
