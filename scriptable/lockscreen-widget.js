@@ -40,38 +40,43 @@ if (timetable) {
 	build_error_widget()
 }
 
-function get_next_lessons(data) {
-	const days = ["Sö", "Må", "Ti", "On", "To", "Fr", "Lö"]
-
-	const today = days[new Date().getDay()]
-
-	const day_data = data.find(day => day[today])
-
-	if (!day_data) {
-		return []
-	}
-
-	return day_data[today].lessons
-}
-
-
 function get_next_lesson(data) {
-	const lessons = get_next_lessons(data)
+  const days = ["Sö", "Må", "Ti", "On", "To", "Fr", "Lö"]
+  const now = new Date()
 
-	const now = new Date()
-	const current_minutes =
-		now.getHours() * 60 + now.getMinutes()
+  const currentDay = now.getDay()
+  const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
-	for (const lesson of lessons) {
-		const [hours, minutes] = lesson.start.split(":")
-		const start_minutes = Number(hours) * 60 + Number(minutes)
+  // Search today, then the following 6 days
+  for (let offset = 0; offset < 7; offset++) {
+    const dayIndex = (currentDay + offset) % 7
+    const dayName = days[dayIndex]
 
-		if (start_minutes > current_minutes) {
-			return lesson
-		}
-	}
+    const dayData = data.find(day => day[dayName])
 
-	return null
+    if (!dayData) continue
+
+    const lessons = dayData[dayName].lessons
+
+    for (const lesson of lessons) {
+      const [startHour, startMinute] = lesson.start.split(":")
+      const startMinutes =
+        Number(startHour) * 60 + Number(startMinute)
+
+      // If today, ignore lessons that have already started
+      if (offset === 0 && startMinutes <= currentMinutes) {
+        continue
+      }
+
+      return {
+        lesson: lesson,
+        day: dayName,
+        daysFromNow: offset
+      }
+    }
+  }
+
+  return null
 }
 
 function arr_to_string(arr) {
