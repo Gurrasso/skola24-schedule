@@ -9,7 +9,7 @@ with sync_playwright() as p:
     page.goto("https://lund-sso.skola24.se/")
 
     page.get_by_role("textbox").fill(
-        input("Username or email: ")
+        input("Enter Username or email: ")
     )
     page.get_by_role("button", name="next").click()
 
@@ -19,7 +19,7 @@ with sync_playwright() as p:
     ).click()
 
     # Enter your password manually
-    page.get_by_role("textbox").fill(input("Password: "))
+    page.get_by_role("textbox").fill(input("Enter password: "))
     page.get_by_role("button", name="Sign in").click()
 
     page.wait_for_load_state("networkidle")
