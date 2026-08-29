@@ -30,7 +30,7 @@ try {
 let widget = new ListWidget()
 
 if (timetable) {
-	let lesson_data = get_next_lesson(timetable)
+	let lesson_data = get_relevant_lesson(timetable)
 	if (lesson_data){
 		build_widget(lesson_data, from_cache)
 	} else {
@@ -40,7 +40,8 @@ if (timetable) {
 	build_error_widget()
 }
 
-function get_next_lesson(data) {
+
+function get_relevant_lesson(data) {
 	const days = ["Sö", "Må", "Ti", "On", "To", "Fr", "Lö"]
 	const now = new Date()
 
@@ -60,15 +61,35 @@ function get_next_lesson(data) {
 
 		for (const lesson of lessons) {
 			const [start_hour, start_minute] = lesson.start.split(":")
+			const [end_hour, end_minute] = lesson.end.split(":")
+
 			const start_minutes =
 				Number(start_hour) * 60 + Number(start_minute)
 
-			// If today, ignore lessons that have already started
+			const end_minutes =
+				Number(end_hour) * 60 + Number(end_minute)
+
+			// Lesson is currently in progress
+			if (
+				offset === 0 &&
+				current_minutes >= start_minutes &&
+				current_minutes < end_minutes
+			) {
+				const minutes_until = end_minutes - current_minutes
+
+				return {
+					lesson: lesson,
+					day: "",
+					minutes_until: minutes_until
+				}
+			}
+
+			// If today, ignore lessons that have already started/ended
 			if (offset === 0 && start_minutes <= current_minutes) {
 				continue
 			}
 
-			// Minutes from now until the lesson
+			// Minutes from now until the lesson starts
 			const minutes_until =
 				(offset * 24 * 60) +
 				start_minutes -
@@ -77,14 +98,13 @@ function get_next_lesson(data) {
 			return {
 				lesson: lesson,
 				day: offset === 0 ? "" : day_name.concat(" | "),
-				minutes_until: minutes_until
+				minutes_until: offset === 0 ? "" : minutes_until
 			}
 		}
 	}
 
-	return [] 
+	return []
 }
-
 
 function arr_to_string(arr) {
 	return arr.join(", ")
@@ -96,7 +116,7 @@ function build_widget(lesson_data, from_cache) {
 	name.font = Font.boldSystemFont(15)
 
 	let time = widget.addText(
-		`${lesson_data.day}${lesson.start} - ${lesson.end}`
+		`${lesson_data.day}${lesson.start} - ${lesson.end}	${lesson_data.minutes_until}`
 	)
 	time.font = Font.systemFont(14)
 
