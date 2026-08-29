@@ -103,11 +103,7 @@ with sync_playwright() as p:
 
 
 
-    print(json.dumps(
-        timetable,
-        indent=2,
-        ensure_ascii=False
-    ))
+    print("Timetable written to timetable.json")
 
     with open(
         "timetable.json",
