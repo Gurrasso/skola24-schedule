@@ -129,11 +129,15 @@ function build_widget(lesson_data, from_cache) {
 		`${lesson_data.day}${lesson.start} - ${lesson.end}	${format_minutes(lesson_data.minutes_until)}`
 	)
 	time.font = Font.systemFont(14)
+	time.minimumScaleFactor = 0.8
+	time.lineLimit = 2
 
-	let teachers_rooms = widget.addText(
+	let teachers_and_rooms = widget.addText(
 		`${lesson.teachers.join(", ")}		${lesson.rooms.join(", ")}`
 	)
-	teachers_rooms.font = Font.systemFont(14)
+	teachers_and_rooms.font = Font.systemFont(14)
+	teachers_and_rooms.minimumScaleFactor = 0.8
+	teachers_and_rooms.lineLimit = 2
 
 	if (from_cache) {
 		let bottom = widget.addStack()
