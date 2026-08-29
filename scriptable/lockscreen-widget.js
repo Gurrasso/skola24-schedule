@@ -40,6 +40,16 @@ if (timetable) {
 	build_error_widget()
 }
 
+function format_minutes(minutes) {
+	const hours = Math.floor(minutes / 60)
+	const mins = minutes % 60
+
+	if (hours > 0) {
+		return `${hours} h ${mins} min`
+	}
+
+	return `${mins} min`
+}
 
 function get_relevant_lesson(data) {
 	const days = ["Sö", "Må", "Ti", "On", "To", "Fr", "Lö"]
@@ -116,7 +126,7 @@ function build_widget(lesson_data, from_cache) {
 	name.font = Font.boldSystemFont(15)
 
 	let time = widget.addText(
-		`${lesson_data.day}${lesson.start} - ${lesson.end}	${lesson_data.minutes_until}`
+		`${lesson_data.day}${lesson.start} - ${lesson.end}	${format_minutes(lesson_data.minutes_until)}`
 	)
 	time.font = Font.systemFont(14)
 
