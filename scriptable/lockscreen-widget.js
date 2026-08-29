@@ -105,19 +105,17 @@ function build_widget(lesson_data, from_cache) {
 	)
 	teachers_rooms.font = Font.systemFont(14)
 
-	// Push bottom stack to the bottom
-	widget.addSpacer()
-
-	let bottom = widget.addStack()
-	bottom.layoutHorizontally()
-
-	// Push icon to the right
-	bottom.addSpacer()
-
 	if (from_cache) {
-		let cached = bottom.addText("●")
-		cached.font = Font.systemFont(8)
-		cached.textColor = Color.gray()
+		let bottom = widget.addStack()
+		bottom.layoutHorizontally()
+		bottom.addSpacer()
+
+		let cached = bottom.addImage(
+			SFSymbol.named("exclamationmark.triangle.fill").image
+		)
+
+		cached.imageSize = new Size(8, 8)
+		cached.tintColor = Color.gray()
 	}
 }
 
