@@ -1,6 +1,3 @@
-const req = new Request("http://192.168.1.50/status.json")
-const data = await req.loadJSON()
-
 lesson = {
 	"name" : "Matte",
 	"teachers" : ["AFo"],
@@ -11,6 +8,15 @@ lesson = {
 
 build_widget(lesson)
 
+function arr_to_string(arr){
+ let returnString = ''
+ arr.forEach((item, index) => {
+   if(index !== 0) returnString += '|'
+   returnString += `${item.name}:${item.value}`
+ })
+ return returnString
+}
+
 function build_widget(lesson){
 	let widget = new ListWidget()
 
@@ -20,7 +26,7 @@ function build_widget(lesson){
 	let time = widget.addText(lesson.start, "	", lesson.end)
 	time.font = Font.systemFont(12)
 
-	let teachers_rooms = widget.addText(lesson.teachers, "	", lesson.rooms)
+	let teachers_rooms = widget.addText(arr_to_string(lesson.teachers), "	", arr_to_string(lesson.rooms))
 	teachers_rooms.font = Font.systemFont(12)
 }
 
