@@ -20,7 +20,7 @@ try {
 } catch (error) {
 	console.log("Request failed:", error)
 
-	// Request failed → use saved data
+	// Request failed -> use saved data
 	if (fm.fileExists(cache_path)) {
 		timetable = JSON.parse(fm.readString(cache_path))
 		from_cache = true
