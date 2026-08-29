@@ -1,6 +1,8 @@
 let timetable
 let cache_age
 
+const fm = FileManager.local()
+
 const cache_path = fm.joinPath(
 	fm.documentsDirectory(),
 	"timetable.json"
