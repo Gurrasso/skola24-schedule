@@ -123,6 +123,7 @@ function get_relevant_lesson(data) {
 				current_minutes >= start_minutes &&
 				current_minutes < end_minutes
 			) {
+				if (lesson.name == "Lunch") { continue }
 				const minutes_until = end_minutes - current_minutes
 
 				return {
