@@ -3,9 +3,6 @@ from playwright.sync_api import sync_playwright
 from datetime import datetime
 import re
 
-def is_time(value):
-    return bool(re.fullmatch(r"\d{1,2}:\d{2}", value))
-
 
 def parse_lessons(data):
     # Find where the times start
