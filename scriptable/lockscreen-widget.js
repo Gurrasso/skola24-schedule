@@ -1,3 +1,17 @@
+//
+// CONFIG
+//
+
+// Url to the server that the widget should fetch the timetable from
+const TIMETABLE_URL = "http://your_ip_address:5000/timetable"
+
+// How often the widget should try to fetch/update the timetable
+const CACHE_DURATION = 60 * 60 * 1000 // 1 hour
+
+//
+// Script/widget
+//
+
 let timetable
 let cache_age
 
@@ -12,8 +26,6 @@ const updated_path = fm.joinPath(
 	fm.documentsDirectory(),
 	"timetable_updated.txt"
 )
-
-const CACHE_DURATION = 60 * 60 * 1000 // 1 hour
 
 let should_fetch = true
 
@@ -31,9 +43,7 @@ if (
 
 if (should_fetch) {
 	try {
-		const request = new Request(
-			"http://192.168.68.113:5000/timetable"
-		)
+		const request = new Request(TIMETABLE_URL)
 		request.timeoutInterval = 5
 
 		timetable = await request.loadJSON()
