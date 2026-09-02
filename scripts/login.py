@@ -6,8 +6,10 @@ with sync_playwright() as p:
     context = browser.new_context()
     page = context.new_page()
 
+    # TODO: add support for different municipalities
     page.goto("https://lund-sso.skola24.se/")
 
+    # Enter username or email manually
     page.get_by_role("textbox").fill(
         input("Enter Username or email: ")
     )
