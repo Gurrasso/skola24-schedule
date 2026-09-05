@@ -14,7 +14,6 @@ const CACHE_DURATION = 60 * 60 * 1000 // 1 hour
 // Script/widget
 //
 
-
 if (!Keychain.contains(KEYCHAIN_NAME)) {
 	throw new Error(
 		"API key not configured in Scriptable Keychain.\n" +
@@ -40,19 +39,21 @@ const updated_path = fm.joinPath(
 	"timetable_updated.txt"
 )
 
+
 let should_fetch = true
 
-if (
-	fm.fileExists(cache_path) &&
-	fm.fileExists(updated_path)
-) {
+if (fm.fileExists(cache_path) && fm.fileExists(updated_path)) {
 	const last_updated = Number(fm.readString(updated_path))
-	cache_age = Date.now() - last_updated
 
-	if (cache_age < CACHE_DURATION) {
-		should_fetch = false
+	if (Number.isFinite(last_updated)) {
+		cache_age = Date.now() - last_updated
+
+		if (cache_age >= 0 && cache_age < CACHE_DURATION) {
+			should_fetch = false
+		}
 	}
 }
+
 
 if (should_fetch) {
 	try {
@@ -63,6 +64,7 @@ if (should_fetch) {
 			"Authorization": `Bearer ${API_KEY}`
 		}
 
+		
 		const response = await request.load()
 		const status = request.response.statusCode
 
@@ -70,7 +72,8 @@ if (should_fetch) {
 			throw new Error(`HTTP ${status}`)
 		}
 
-		timetable = await request.loadJSON()
+		timetable = JSON.parse(response)
+
 
 		// Save fresh timetable
 		fm.writeString(
@@ -91,14 +94,25 @@ if (should_fetch) {
 	}
 }
 
-// Use cache if we didn't fetch, or if fetching failed
 if (!timetable && fm.fileExists(cache_path)) {
-	timetable = JSON.parse(fm.readString(cache_path))
+	try {
+		timetable = JSON.parse(fm.readString(cache_path))
+
+		// If we have cached data but no valid timestamp,
+		// treat it as stale.
+		if (!Number.isFinite(cache_age)) {
+			cache_age = CACHE_DURATION + 1
+		}
+	} catch (error) {
+		console.log("Cache is invalid:", error)
+		timetable = null
+	}
 }
+
 
 let widget = new ListWidget()
 
-if (timetable) {
+if (timetable && validate_timetable(timetable)) {
 	let lesson_data = get_relevant_lesson(timetable)
 	if (lesson_data){
 		build_widget(lesson_data, cache_age)
@@ -186,15 +200,94 @@ function get_relevant_lesson(data) {
 		}
 	}
 
-	return []
+	return null
 }
 
 function arr_to_string(arr) {
 	return arr.join(", ")
 }
 
+
+function is_valid_time(value) {
+	if (typeof value !== "string") return false
+
+	return /^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(value)
+}
+
+
+function validate_timetable(data) {
+	// Top level must be an array
+	if (!Array.isArray(data)) {
+		return false
+	}
+
+	const days = ["Sö", "Må", "Ti", "On", "To", "Fr", "Lö"]
+
+	for (const day_data of data) {
+		// Each day must be an object
+		if (
+			typeof day_data !== "object" ||
+			day_data === null ||
+			Array.isArray(day_data)
+		) {
+			return false
+		}
+
+		// Find the day contained in this object
+		const day_name = days.find(day => day_data[day] !== undefined)
+
+		if (!day_name) {
+			return false
+		}
+
+		const day = day_data[day_name]
+
+		if (
+			typeof day !== "object" ||
+			day === null ||
+			!Array.isArray(day.lessons)
+		) {
+			return false
+		}
+
+		for (const lesson of day.lessons) {
+			if (
+				typeof lesson !== "object" ||
+				lesson === null ||
+				typeof lesson.name !== "string" ||
+				!is_valid_time(lesson.start) ||
+				!is_valid_time(lesson.end) ||
+				!Array.isArray(lesson.teachers) ||
+				!Array.isArray(lesson.rooms)
+			) {
+				return false
+			}
+
+			const [startHour, startMinute] = lesson.start.split(":").map(Number)
+			const [endHour, endMinute] = lesson.end.split(":").map(Number)
+
+			const startMinutes = startHour * 60 + startMinute
+			const endMinutes = endHour * 60 + endMinute
+
+			if (endMinutes <= startMinutes) {
+				return false
+			}
+
+			// Make sure teachers and rooms contain strings
+			if (
+				!lesson.teachers.every(t => typeof t === "string") ||
+				!lesson.rooms.every(r => typeof r === "string")
+			) {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
 function build_widget(lesson_data, cache_age) {
-	lesson = lesson_data.lesson
+	const lesson = lesson_data.lesson
 	let name = widget.addText(lesson.name)
 	name.font = Font.boldSystemFont(14)
 
@@ -227,19 +320,16 @@ function build_widget(lesson_data, cache_age) {
 }
 
 function build_no_lessons_widget(){
-	let text = widget.addText("No classes found")
+	let text = widget.addText("No classes found this week!")
 	text.font = Font.boldSystemFont(14)
 
 }
 
 function build_error_widget() {
-	let error = widget.addText("⚠️ No data")
+	let error = widget.addText("⚠️ Invalid data")
 	error.font = Font.boldSystemFont(12)
 
 	widget.addSpacer(4)
-
-	let message = widget.addText("Could not connect")
-	message.font = Font.systemFont(10)
 }
 
 function get_refresh_time(){
