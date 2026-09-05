@@ -2,15 +2,28 @@
 // CONFIG
 //
 
-// Url to the server that the widget should fetch the timetable from
 const TIMETABLE_URL = "http://your_ip_address:5000/timetable"
+
+const KEYCHAIN_NAME = "timetable_api_key"
 
 // How often the widget should try to fetch/update the timetable
 const CACHE_DURATION = 60 * 60 * 1000 // 1 hour
 
+
 //
 // Script/widget
 //
+
+
+if (!Keychain.contains(KEYCHAIN_NAME)) {
+	throw new Error(
+		"API key not configured in Scriptable Keychain.\n" +
+		'Run a separate setup script with:\n\n' +
+		'Keychain.set("KEYCHAIN_NAME", "YOUR_API_KEY")'
+	)
+}
+const API_KEY = Keychain.get(KEYCHAIN_NAME)
+
 
 let timetable
 let cache_age
@@ -45,6 +58,10 @@ if (should_fetch) {
 	try {
 		const request = new Request(TIMETABLE_URL)
 		request.timeoutInterval = 5
+
+		request.headers = {
+			"Authorization": `Bearer ${API_KEY}`
+		}
 
 		timetable = await request.loadJSON()
 
