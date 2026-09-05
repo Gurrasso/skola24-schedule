@@ -1,21 +1,31 @@
 from flask import Flask, jsonify, request
 from functools import wraps
+from pathlib import Path
 
 import subprocess
 import threading
 import time
 import json
 import hmac
-from pathlib import Path
-
+import hashlib
 
 
 app = Flask(__name__)
 
 TIMETABLE_FILE = "timetable.json"
 WORKER_FILE = "scripts/timetable.py"
-# This path is made by mounting the container with a file that contains the API_KEY
-API_KEY = Path("/run/secrets/api_key").read_text().strip()
+HASH_FILE = Path("/run/secrets/api_key_hash")
+
+try:
+    EXPECTED_HASH = HASH_FILE.read_text().strip()
+except FileNotFoundError:
+    raise RuntimeError("\nAPI key hash not found at /run/secrets/api_key_hash,\nMount this file with docker when running the server")
+
+
+def verify_api_key(api_key: str) -> bool:
+    actual_hash = hashlib.sha256(api_key.encode()).hexdigest()
+    return hmac.compare_digest(actual_hash, EXPECTED_HASH)
+
 
 def require_api_key(view):
     @wraps(view)
@@ -27,7 +37,7 @@ def require_api_key(view):
         if (
             scheme.lower() != "bearer"
             or not supplied_key
-            or not hmac.compare_digest(supplied_key, API_KEY)
+            or not verify_api_key(supplied_key)
         ):
             response = jsonify({"error": "Invalid or missing API key"})
             response.status_code = 401

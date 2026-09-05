@@ -1,4 +1,5 @@
-docker run -i \
+docker run \
   -p 5000:5000 \
-  --mount type=bind,source=/opt/my-api/secrets/api_key,target=/run/secrets/api_key,readonly \
-  skola24_schedule
+  --mount type=bind,source="$(pwd)/secrets/api_key_hash",target=/run/secrets/api_key_hash,readonly \
+  -it skola24_schedule
+
