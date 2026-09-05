@@ -63,6 +63,13 @@ if (should_fetch) {
 			"Authorization": `Bearer ${API_KEY}`
 		}
 
+		const response = await request.load()
+		const status = request.response.statusCode
+
+		if (status < 200 || status >= 300) {
+			throw new Error(`HTTP ${status}`)
+		}
+
 		timetable = await request.loadJSON()
 
 		// Save fresh timetable
